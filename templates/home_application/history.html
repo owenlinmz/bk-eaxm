@@ -1,0 +1,111 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+<div class="history" id="app">
+
+    <div class="select">
+        <i-form>
+            <Form-item label="选择业务">
+                <i-select v-model="bizModel" style="width:200px">
+                    <i-option v-for="item in bk_biz_id" :value="item.value"
+                              :key="item.value">{{ item.label }}</i-option>
+                </i-select>
+            </Form-item>
+            <i-input v-model="ip" placeholder="请输入IP" style="width: 250px"/>
+        </i-form>
+        <i-button type="info" @click="searchHistory" style="margin: 20px 100px">查询历史</i-button>
+
+    </div>
+    <div class="host_list">
+        <Card style="width: 1035px">
+            <p slot="title">
+                <Icon type="ios-film-outline"></Icon>
+                历史列表
+            </p>
+            <i-table height="300" :columns="columns" :data="host_data"></i-table>
+        </Card>
+    </div>
+</div>
+</%block>
+
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            ip: '',
+            bk_biz_id: [
+                {
+                    value: '1',
+                    label: '蓝鲸'
+                },
+                {
+                    value: '2',
+                    label: '测试'
+                }
+            ],
+            bizModel: '',
+            columns: [
+                {
+                    title: '业务',
+                    key: 'bk_biz_id'
+                },
+                {
+                    title: '用户',
+                    key: 'user_name'
+                },
+                {
+                    title: '作业ID',
+                    key: 'job_id'
+                },
+                {
+                    title: '操作时间',
+                    key: 'operation_time'
+                },
+                {
+                    title: '主机列表',
+                    key: 'host'
+                },
+                {
+                    title: '作业状态',
+                    key: 'job_status'
+                },
+                {
+                    title: '作业日志',
+                    key: 'job_log'
+                }
+            ],
+            host_data: [
+                {
+                    bk_biz_id: '蓝鲸',
+                    user_name: 'admin',
+                    job_id: 1,
+                    operation_time: '2019-02-25',
+                    host: '192.168.0.1',
+                    job_status: '成功',
+                    job_log: ''
+                }
+
+            ]
+
+
+        },
+        methods: {
+            searchHistory: function () {
+                alert("执行成功")
+            }
+        }
+
+    })
+</script>
+
+<style>
+    .select {
+        margin-left: 35%;
+        margin-top: 20px;
+    }
+
+    .host_list {
+        margin-top: 50px;
+        margin-left: 15%;
+    }
+</style>

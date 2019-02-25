@@ -1,0 +1,134 @@
+<%inherit file="/base.html"/>
+
+<%block name="content">
+<div class="home-page" id="app">
+    <div class="select">
+        <i-form>
+            <Form-item label="选择业务">
+                <i-select v-model="bizModel" style="width:200px">
+                    <i-option v-for="item in bk_biz_id" :value="item.value"
+                              :key="item.value">{{ item.label }}</i-option>
+                </i-select>
+            </Form-item>
+            <Form-item label="选择集群">
+                <i-select v-model="setModel" style="width:200px">
+                    <i-option v-for="item in sets" :value="item.value" :key="item.value">{{ item.label }}</i-option>
+                </i-select>
+            </Form-item>
+            <i-button type="primary" @click="searchHost" style="margin:0 40px">查询主机</i-button>
+            <i-button type="success" @click="excuteBiz">执行业务</i-button>
+        </i-form>
+    </div>
+    <div class="host_list">
+        <Card style="width:1035px">
+            <p slot="title">
+                <Icon type="ios-film-outline"></Icon>
+                主机列表
+            </p>
+            <i-table height="300" width="1000" :columns="columns" :data="host_data"></i-table>
+        </Card>
+    </div>
+</div>
+</%block>
+
+<script>
+    new Vue({
+        el: "#app",
+        data: {
+            bk_biz_id: [
+                {
+                    value: '1',
+                    label: '蓝鲸'
+                },
+                {
+                    value: '2',
+                    label: '测试'
+                }
+            ],
+            bizModel: '',
+            sets: [
+                {
+                    value: '1',
+                    label: '集群1'
+                },
+                {
+                    value: '2',
+                    label: '集群2'
+                }
+            ],
+            setModel: '',
+            columns: [
+                {
+                    title: '内外IP',
+                    key: 'ip'
+                },
+                {
+                    title: '系统名',
+                    key: 'system_name'
+                },
+                {
+                    title: '主机名',
+                    key: 'host_name'
+                },
+                {
+                    title: '云区域',
+                    key: 'plat_id'
+                }
+            ],
+            host_data: [
+                {
+                    ip: '192.168.0.1',
+                    system_name: '',
+                    host_name: 'mySQl',
+                    plat_id: 'default_area'
+                },
+                {
+                    ip: '192.168.0.2',
+                    system_name: '',
+                    host_name: 'apache',
+                    plat_id: 'default_area'
+                },
+                {
+                    ip: '192.168.0.3',
+                    system_name: '',
+                    host_name: 'nginx',
+                    plat_id: 'default_area'
+                },
+                {
+                    ip: '192.168.0.4',
+                    system_name: '',
+                    host_name: 'redis',
+                    plat_id: 'default_area'
+                }
+            ]
+
+
+        },
+        methods: {
+            searchHost: function () {
+                alert("执行成功")
+            },
+            excuteBiz: function () {
+                alert("执行成功")
+            }
+        },
+        created: {
+            getSet: function () {
+                
+            }
+        }
+
+    })
+</script>
+
+<style>
+    .select {
+        margin-left: 35%;
+        margin-top: 20px;
+    }
+
+    .host_list {
+        margin-top: 50px;
+        margin-left: 15%;
+    }
+</style>
