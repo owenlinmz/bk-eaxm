@@ -40,6 +40,3 @@ def test(request):
 
 def history(request):
     return render_mako_context(request, '/home_application/history.html')
-
-
-def search_set(request):
