@@ -6,13 +6,14 @@
         <i-form>
             <Form-item label="选择业务">
                 <i-select v-model="bizModel" style="width:200px">
-                    <i-option v-for="item in bk_biz_id" :value="item.value"
-                              :key="item.value">{{ item.label }}</i-option>
+                    <i-option v-for="item in bk_biz_id" :value="item.bk_biz_id"
+                              :key="item.bk_biz_name">{{ item.bk_biz_name }}</i-option>
                 </i-select>
             </Form-item>
             <Form-item label="选择集群">
                 <i-select v-model="setModel" style="width:200px">
-                    <i-option v-for="item in sets" :value="item.value" :key="item.value">{{ item.label }}</i-option>
+                    <i-option v-for="item in sets" :value="item.bk_set_id"
+                              :key="item.bk_set_name">{{ item.bk_set_name }}</i-option>
                 </i-select>
             </Form-item>
             <i-button type="primary" @click="searchHost" style="margin:0 40px">查询主机</i-button>
@@ -25,96 +26,87 @@
                 <Icon type="ios-film-outline"></Icon>
                 主机列表
             </p>
-            <i-table height="300" width="1000" :columns="columns" :data="host_data"></i-table>
+            <i-table height="300" width="1000" :columns="columns" :data="real_hosts"></i-table>
         </Card>
     </div>
 </div>
 </%block>
 
 <script>
-    new Vue({
+    Vue.prototype.$http = axios;
+    let vm = new Vue({
         el: "#app",
         data: {
-            bk_biz_id: [
-                {
-                    value: '1',
-                    label: '蓝鲸'
-                },
-                {
-                    value: '2',
-                    label: '测试'
-                }
-            ],
+            bk_biz_id: [],
             bizModel: '',
-            sets: [
-                {
-                    value: '1',
-                    label: '集群1'
-                },
-                {
-                    value: '2',
-                    label: '集群2'
-                }
-            ],
+            sets: [],
             setModel: '',
             columns: [
                 {
                     title: '内外IP',
-                    key: 'ip'
+                    key: 'bk_host_innerip'
                 },
                 {
                     title: '系统名',
-                    key: 'system_name'
+                    key: 'bk_os_name'
                 },
                 {
                     title: '主机名',
-                    key: 'host_name'
+                    key: 'bk_host_name'
                 },
                 {
                     title: '云区域',
-                    key: 'plat_id'
+                    key: 'bk_inst_name'
                 }
             ],
-            host_data: [
-                {
-                    ip: '192.168.0.1',
-                    system_name: '',
-                    host_name: 'mySQl',
-                    plat_id: 'default_area'
-                },
-                {
-                    ip: '192.168.0.2',
-                    system_name: '',
-                    host_name: 'apache',
-                    plat_id: 'default_area'
-                },
-                {
-                    ip: '192.168.0.3',
-                    system_name: '',
-                    host_name: 'nginx',
-                    plat_id: 'default_area'
-                },
-                {
-                    ip: '192.168.0.4',
-                    system_name: '',
-                    host_name: 'redis',
-                    plat_id: 'default_area'
-                }
-            ]
-
-
+            hosts: [],
+            real_hosts: []
         },
         methods: {
+            get_biz: function () {
+                let self = this;
+                let url = site_url + 'get_biz/';
+                this.$http.get(url).then(response => {
+                    self.bk_biz_id = response.data.data.info;
+                });
+            },
             searchHost: function () {
-                alert("执行成功")
+                let self = this;
+                let url = '';
+                let host_data = [];
+                if (self.setModel) {
+                    url = site_url + 'search_host/?bk_biz_id=' + self.bizModel + '&bk_set_id=' + self.setModel
+                } else {
+                    url = site_url + 'search_host/?bk_biz_id=' + self.bizModel
+                }
+                this.$http.get(url).then(response => {
+                    self.hosts = response.data.data.info;
+                });
+                for (let i = 0; i < self.hosts.length; i++) {
+                    host_data.push(self.hosts[i].host)
+                }
+                self.real_hosts = host_data;
+                for(let i = 0; i < self.real_hosts.length; i++){
+                    self.real_hosts[i].bk_inst_name = self.real_hosts[i].bk_cloud_id[0].bk_inst_name
+                }
+            },
+            get_sets: function () {
+                let self = this;
+                let url = site_url + 'get_set/?bk_biz_id=' + this.bizModel;
+                this.$http.get(url).then(response => {
+                    self.sets = response.data.data.info;
+                });
             },
             excuteBiz: function () {
                 alert("执行成功")
             }
         },
-        created: {
-            getSet: function () {
-                
+        created() {
+            this.get_biz();
+        },
+        watch: {
+            bizModel() {
+                this.get_sets();
             }
         }
 
