@@ -16,8 +16,8 @@
                               :key="item.bk_set_name">{{ item.bk_set_name }}</i-option>
                 </i-select>
             </Form-item>
-            <i-button type="primary" @click="searchHost" style="margin:0 40px">查询主机</i-button>
-            <i-button type="success" @click="excuteBiz">执行业务</i-button>
+            <i-button type="primary" @click="search_host" style="margin:0 40px">查询主机</i-button>
+            <i-button type="success" @click="execute_job">执行作业</i-button>
         </i-form>
     </div>
     <div class="host_list">
@@ -60,7 +60,8 @@
                 }
             ],
             hosts: [],
-            real_hosts: []
+            real_hosts: [],
+            job_instance_id: 0
         },
         methods: {
             get_biz: function () {
@@ -68,9 +69,11 @@
                 let url = site_url + 'get_biz/';
                 this.$http.get(url).then(response => {
                     self.bk_biz_id = response.data.data.info;
+                }).catch(error => {
+                    console.log(error)
                 });
             },
-            searchHost: function () {
+            search_host: function () {
                 let self = this;
                 let url = '';
                 let host_data = [];
@@ -81,12 +84,15 @@
                 }
                 this.$http.get(url).then(response => {
                     self.hosts = response.data.data.info;
-                });
+                }).catch(error => {
+                        console.log(error)
+                    }
+                );
                 for (let i = 0; i < self.hosts.length; i++) {
                     host_data.push(self.hosts[i].host)
                 }
                 self.real_hosts = host_data;
-                for(let i = 0; i < self.real_hosts.length; i++){
+                for (let i = 0; i < self.real_hosts.length; i++) {
                     self.real_hosts[i].bk_inst_name = self.real_hosts[i].bk_cloud_id[0].bk_inst_name
                 }
             },
@@ -95,10 +101,34 @@
                 let url = site_url + 'get_set/?bk_biz_id=' + this.bizModel;
                 this.$http.get(url).then(response => {
                     self.sets = response.data.data.info;
+                }).catch(error => {
+                    console.log(error)
                 });
             },
-            excuteBiz: function () {
-                alert("执行成功")
+            execute_job: function () {
+                let self = this;
+                let url = site_url + 'execute_job/';
+                let ip_list = [];
+                for (let i = 0; i < self.real_hosts.length; i++) {
+                    ip_list.push({
+                        ip: self.real_hosts[i].bk_host_innerip,
+                        bk_cloud_id: self.real_hosts[i].bk_cloud_id[0].id
+                    })
+                }
+                params = {
+                    bk_biz_id: self.bizModel,
+                    ip_list: ip_list
+                };
+                this.$http.post(url, JSON.stringify(params)).then(response => {
+                    if (response.data.result) {
+                        alert("作业已执行");
+                        self.job_instance_id = response.data.data.job_instance_id
+                    } else {
+                        alert("作业执行失败")
+                    }
+                }).catch(error => {
+                    console.log(error)
+                })
             }
         },
         created() {

@@ -11,5 +11,8 @@ urlpatterns = patterns(
     (r'^history/$', 'history'),
     (r'^get_set/$', 'get_set'),
     (r'^get_biz/$', 'get_biz'),
-    (r'^search_host/$', 'search_host')
+    (r'^search_host/$', 'search_host'),
+    (r'^execute_job/$', 'execute_job'),
+    (r'^get_job_instance_status/$', 'execute_job'),
+    (r'^search_job_history_in_db/$', 'search_job_history_in_db')
 )
