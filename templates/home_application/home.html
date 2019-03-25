@@ -11,13 +11,15 @@
                 </i-select>
             </Form-item>
             <Form-item label="选择集群">
-                <i-select v-model="setModel" style="width:200px">
+                <i-select v-model="setModel" style="width:200px" clearable>
                     <i-option v-for="item in sets" :value="item.bk_set_id"
                               :key="item.bk_set_name">{{ item.bk_set_name }}</i-option>
                 </i-select>
             </Form-item>
-            <i-button type="primary" @click="search_host" style="margin:0 40px">查询主机</i-button>
-            <i-button type="success" @click="execute_job">执行作业</i-button>
+            <i-input v-model="ip_list" placeholder="请输入IP (使用逗号分隔)" style="width: 300px"></i-input>
+            <i-button type="primary" @click="search_host" style="margin:0 10px">查询主机</i-button>
+            <i-button type="success" @click="execute_job" style="margin:0 20px">执行作业</i-button>
+            <i-button type="success" @click="get_performance">查询主机性能</i-button>
         </i-form>
     </div>
     <div class="host_list">
@@ -26,7 +28,7 @@
                 <Icon type="ios-film-outline"></Icon>
                 主机列表
             </p>
-            <i-table height="300" width="1000" :columns="columns" :data="real_hosts"></i-table>
+            <i-table height="300" width="1000" :columns="columns" :data="hosts"></i-table>
         </Card>
     </div>
 </div>
@@ -57,81 +59,103 @@
                 {
                     title: '云区域',
                     key: 'bk_inst_name'
+                },
+                {
+                    title: '内存使用率',
+                    key: 'mem'
+                },
+                {
+                    title: '磁盘使用率',
+                    key: 'disk'
+                },
+                {
+                    title: 'cpu使用率',
+                    key: 'cpu'
                 }
             ],
             hosts: [],
-            real_hosts: [],
-            job_instance_id: 0
+            job_instance_id: 0,
+            ip_list: ''
         },
         methods: {
             get_biz: function () {
-                let self = this;
                 let url = site_url + 'get_biz/';
                 this.$http.get(url).then(response => {
-                    self.bk_biz_id = response.data.data.info;
+                    this.bk_biz_id = response.data.data;
                 }).catch(error => {
                     console.log(error)
                 });
             },
             search_host: function () {
-                let self = this;
-                let url = '';
-                let host_data = [];
-                if (self.setModel) {
-                    url = site_url + 'search_host/?bk_biz_id=' + self.bizModel + '&bk_set_id=' + self.setModel
-                } else {
-                    url = site_url + 'search_host/?bk_biz_id=' + self.bizModel
-                }
-                this.$http.get(url).then(response => {
-                    self.hosts = response.data.data.info;
+                this.real_hosts = [];
+                let url = site_url + 'search_host/';
+                let params = {
+                    bk_host_innerip__in: this.ip_list,
+                    bk_set_id__contains: this.setModel,
+                    bk_biz_id: this.bizModel
+                };
+                this.$http.post(url, params).then(response => {
+                    this.hosts = response.data.data;
                 }).catch(error => {
                         console.log(error)
                     }
                 );
-                for (let i = 0; i < self.hosts.length; i++) {
-                    host_data.push(self.hosts[i].host)
-                }
-                self.real_hosts = host_data;
-                for (let i = 0; i < self.real_hosts.length; i++) {
-                    self.real_hosts[i].bk_inst_name = self.real_hosts[i].bk_cloud_id[0].bk_inst_name
-                }
             },
             get_sets: function () {
-                let self = this;
                 let url = site_url + 'get_set/?bk_biz_id=' + this.bizModel;
                 this.$http.get(url).then(response => {
-                    self.sets = response.data.data.info;
+                    this.sets = response.data.data;
                 }).catch(error => {
                     console.log(error)
                 });
             },
             execute_job: function () {
-                let self = this;
                 let url = site_url + 'execute_job/';
                 let ip_list = [];
-                for (let i = 0; i < self.real_hosts.length; i++) {
+                for (let i = 0; i < this.hosts.length; i++) {
                     ip_list.push({
-                        ip: self.real_hosts[i].bk_host_innerip,
-                        bk_cloud_id: self.real_hosts[i].bk_cloud_id[0].id
+                        ip: this.hosts[i].bk_host_innerip,
+                        bk_cloud_id: this.hosts[i].bk_cloud_id
                     })
                 }
-                params = {
-                    bk_biz_id: self.bizModel,
+                let params = {
+                    bk_biz_id: this.bizModel,
                     ip_list: ip_list
                 };
                 this.$http.post(url, JSON.stringify(params)).then(response => {
-                    if (response.data.result) {
+                    if (response.data) {
                         alert("作业已执行");
-                        self.job_instance_id = response.data.data.job_instance_id
+                        this.job_instance_id = response.data.job_instance_id
                     } else {
                         alert("作业执行失败")
                     }
                 }).catch(error => {
                     console.log(error)
                 })
+            },
+            get_performance: function () {
+                let url = site_url + 'get_performance/';
+                let ip_list = [];
+                for (let i = 0; i < this.hosts.length; i++) {
+                    ip_list.push({
+                        ip: this.hosts[i].bk_host_innerip,
+                        bk_cloud_id: this.hosts[i].bk_cloud_id
+                    })
+                }
+                let params = {
+                    bk_biz_id: this.bizModel,
+                    ip_list: ip_list
+                };
+                this.$http.post(url, params).then(response => {
+                    if (response.data.result) {
+                        alert("查询成功");
+                    } else {
+                        alert("查询失败")
+                    }
+                })
             }
         },
-        created() {
+        mounted() {
             this.get_biz();
         },
         watch: {

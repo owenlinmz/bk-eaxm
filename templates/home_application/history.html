@@ -91,24 +91,13 @@
             ],
             host_data: [],
             history_data: []
-
-
         },
         methods: {
             get_biz() {
                 let self = this;
                 let url = site_url + 'get_biz/';
                 this.$http.get(url).then(response => {
-                    self.bk_biz_id = response.data.data.info;
-                }).catch(error => {
-                    console.log(error)
-                });
-            },
-            searchHistory() {
-                let self = this;
-                let url = site_url + 'search_job_history_in_db/?bk_biz_id=' + self.bizModel
-                this.$http.get(url).then(response => {
-                    self.host_data = response.data.data
+                    self.bk_biz_id = response.data.data;
                 }).catch(error => {
                     console.log(error)
                 });
@@ -120,10 +109,18 @@
                     title: '日志',
                     content: result,
                 });
-
+            },
+            searchHistory() {
+                let self = this;
+                let url = site_url + 'search_job_history_in_db/?bk_biz_id=' + self.bizModel
+                this.$http.get(url).then(response => {
+                    self.host_data = response.data.data
+                }).catch(error => {
+                    console.log(error)
+                });
             }
         },
-        created() {
+        mounted() {
             this.get_biz();
         },
         watch: {
