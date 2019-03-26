@@ -160,23 +160,15 @@ def search_host(request):
 
     # 查询最新性能数据
     for host_info in host_info_list:
-        host_info_dict = model_to_dict(host_info)
-        host_performance = HostPerformance.objects.filter(bk_host_innerip=host_info_dict['bk_host_innerip'],
-                                                          is_delete=False).order_by(
-            'check_time').last()
-        if host_performance:
-            host_info_dict.update(model_to_dict(host_performance, fields=['bk_host_innerip', 'mem', 'disk', 'cpu']))
-        else:
-            host_info_dict.update({
-                'mem': '--',
-                'disk': '--',
-                'cpu': '--'
-            })
+        host_info_dict = CommonUtil.get_newest_pfm(host_info.bk_host_innerip)
         result.append(host_info_dict)
     return render_json({'data': result})
 
 
 def host_write_into_db(result, bk_biz_id):
+    """
+    主机数据写入数据库
+    """
     for item in result['data']:
         bk_set_id = set()
         bk_module_id = set()
@@ -204,6 +196,7 @@ def display_performance(request):
     用于展示性能图表
     """
 
+    # 处理单个主机的性能数据
     def generate_data(pfm_list):
         xAxis = []
         series = []
@@ -238,6 +231,10 @@ def display_performance(request):
 
     params = CommonUtil.pop_useless_params(json.loads(request.body))
     result = []
+    now = datetime.datetime.now()
+    params.update({
+        'check_time__gte': now - datetime.timedelta(0, 3600)
+    })
     host_pfm_list = HostPerformance.objects.filter(**params)
     if params.get('bk_host_innerip__in', None):
         for ip in params['bk_host_innerip__in']:

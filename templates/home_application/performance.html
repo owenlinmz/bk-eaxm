@@ -5,15 +5,16 @@
 
     <i-form class="select">
         <Form-item label="选择业务">
-            <i-select v-model="bizModel" style="width:200px">
+            <i-select v-model="bizModel" style="width: 45%">
                 <i-option v-for="item in bk_biz_id" :value="item.bk_biz_id"
                           :key="item.bk_biz_name">{{ item.bk_biz_name }}</i-option>
             </i-select>
-            <i-input v-model="ip_list" placeholder="请输入IP" style="width: 250px"/>
+            <i-input v-model="ip_list" placeholder="请输入IP" style="width: 45%"/>
         </Form-item>
-        <i-button type="primary" @click="display_performance" style="margin-left: 10%">查询性能</i-button>
+        <i-button type="primary" @click="display_performance" style="margin-left: 40%">查询性能</i-button>
     </i-form>
-    <div v-for="item in elements" :id="item.element_name" style="height:250px; margin-top: 50px; width: 80%; margin-left: 10%"></div>
+    <div v-for="item in elements" :id="item.element_name"
+         style="height:250px; margin-top: 50px; width: 80%; margin-left: 10%"></div>
 </div>
 </%block>
 
@@ -48,7 +49,7 @@
                 myChart.setOption({
                     title: {
                         show: true,
-                        text: pfm_data.title,
+                        text: pfm_data.title + '主机近一小时状态数据',
                         x: 'center'
                     },
                     tooltip: {
@@ -68,7 +69,10 @@
                     yAxis: [
                         {
                             type: 'value',
-                            splitArea: {show: true}
+                            splitArea: {show: true},
+                            max: 100,
+                            min: 0,
+                            name: '单位(%)'
                         }
                     ],
                     series: pfm_data.series
@@ -108,8 +112,9 @@
 
 <style>
     .select {
-        margin-left: 30%;
+        margin-left: 25%;
         margin-top: 20px;
+        width: 50%;
     }
 
 </style>

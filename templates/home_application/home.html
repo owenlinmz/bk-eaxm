@@ -4,31 +4,30 @@
 <div class="home-page" id="app">
     <div class="select">
         <i-form>
-            <Form-item label="选择业务">
-                <i-select v-model="bizModel" style="width:200px">
+            <Form-item>
+                <i-select label="选择业务" v-model="bizModel" style="width:200px">
                     <i-option v-for="item in bk_biz_id" :value="item.bk_biz_id"
                               :key="item.bk_biz_name">{{ item.bk_biz_name }}</i-option>
                 </i-select>
-            </Form-item>
-            <Form-item label="选择集群">
-                <i-select v-model="setModel" style="width:200px" clearable>
+                <i-select label="选择集群" v-model="setModel" style="width:200px" clearable>
                     <i-option v-for="item in sets" :value="item.bk_set_id"
                               :key="item.bk_set_name">{{ item.bk_set_name }}</i-option>
                 </i-select>
+                <i-input v-model="ip_list" placeholder="请输入IP (使用逗号分隔)" style="width: 300px"></i-input>
             </Form-item>
-            <i-input v-model="ip_list" placeholder="请输入IP (使用逗号分隔)" style="width: 300px"></i-input>
+
             <i-button type="primary" @click="search_host" style="margin:0 10px">查询主机</i-button>
             <i-button type="success" @click="execute_job" style="margin:0 20px">执行作业</i-button>
-            <i-button type="success" @click="get_performance">查询主机性能</i-button>
+            <i-button type="success" @click="get_performance">手动执行获取主机状态脚本</i-button>
         </i-form>
     </div>
     <div class="host_list">
-        <Card style="width:1500px">
+        <Card style="width: 100%;">
             <p slot="title">
                 <Icon type="ios-film-outline"></Icon>
                 主机列表
             </p>
-            <i-table stripe height="300" width="1300" :columns="columns" :data="hosts"></i-table>
+            <i-table stripe height="300" width="100%" :columns="columns" :data="hosts"></i-table>
         </Card>
     </div>
 </div>
@@ -92,10 +91,10 @@
                                         vm.update_pfm(params.row)
                                     }
                                 }
-                            }, '更新数据'),
+                            }, '更新主机数据'),
                             h('Button', {
                                 props: {
-                                    type: 'warning',
+                                    type: vm.button_style[Number(params.row.is_delete)].color,
                                     size: 'small'
                                 },
                                 on: {
@@ -103,14 +102,24 @@
                                         vm.switch_pfm(params.row)
                                     }
                                 }
-                            }, '启用/停用监控')
+                            }, vm.button_style[Number(params.row.is_delete)].title)
                         ]);
                     }
                 }
             ],
             hosts: [],
             job_instance_id: 0,
-            ip_list: ''
+            ip_list: '',
+            button_style: [
+                {
+                    color: 'success',
+                    title: '已启用监控'
+                },
+                {
+                    color: 'error',
+                    title: '已停止监控'
+                }
+            ]
         },
         methods: {
             get_biz: function () {
@@ -217,6 +226,9 @@
             bizModel() {
                 this.get_sets();
                 this.search_host();
+            },
+            setModel() {
+                this.search_host();
             }
         }
 
@@ -225,8 +237,9 @@
 
 <style>
     .select {
-        margin-left: 35%;
+        margin-left: 20%;
         margin-top: 20px;
+        width: 60%;
     }
 
     .host_list {
