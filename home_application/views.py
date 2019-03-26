@@ -226,7 +226,7 @@ def display_performance(request):
         return {
             "xAxis": xAxis,
             "series": series,
-            "title": pfm_list[0].bk_host_innerip.bk_host_innerip if pfm_list else u'无数据'
+            "title": pfm_list[0].bk_host_innerip.bk_host_innerip
         }
 
     params = CommonUtil.pop_useless_params(json.loads(request.body))
@@ -239,12 +239,12 @@ def display_performance(request):
     if params.get('bk_host_innerip__in', None):
         for ip in params['bk_host_innerip__in']:
             single_host_pfm_list = host_pfm_list.filter(bk_host_innerip=ip)
-            result.append(generate_data(single_host_pfm_list))
+            if single_host_pfm_list.exists():
+                result.append(generate_data(single_host_pfm_list))
     else:
-        host_info_list = HostInfo.objects.filter(is_delete=False)
+        host_info_list = HostInfo.objects.filter(is_delete=False, bk_os_name__contains='linux')
         for host_info in host_info_list:
             result.append(generate_data(host_pfm_list.filter(bk_host_innerip=host_info)))
-
     return render_json({'data': result})
 
 

@@ -34,10 +34,6 @@ class HostInfo(models.Model):
     bk_module_id = models.CharField(u'所属模块', max_length=100)
     is_delete = models.BooleanField(u'是否删除', default=False)
 
-    def delete(self, using=None):
-        self.is_delete = True
-        self.save()
-
 
 class HostPerformance(models.Model):
     bk_host_innerip = models.ForeignKey(HostInfo, max_length=20, on_delete=models.CASCADE)
@@ -46,7 +42,3 @@ class HostPerformance(models.Model):
     cpu = models.CharField(u'CPU使用率', max_length=10)
     is_delete = models.BooleanField(u'是否删除', default=False)
     check_time = models.DateTimeField(u'检测时间', auto_now=True)
-
-    def delete(self, using=None):
-        self.is_delete = True
-        self.save()
