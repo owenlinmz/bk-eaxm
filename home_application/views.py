@@ -62,20 +62,6 @@ def get_set(request):
     return render_json(res)
 
 
-# def search_host(request):
-#     bk_biz_id = request.GET.get('bk_biz_id')
-#     bk_set_id = request.GET.get('bk_set_id')
-#     client = get_client_by_request(request)
-#     res = get_host_by_biz_and_set(client, 'admin', bk_biz_id, bk_set_id)
-#     # 处理主机信息
-#     final_res = []
-#     for item in res['data']:
-#         item['host']['bk_inst_name'] = item['host']['bk_cloud_id'][0]['bk_inst_name']
-#         final_res.append(item['host'])
-#
-#     return render_json(final_res)
-
-
 def execute_job(request):
     data = json.loads(request.body)
     client = get_client_by_request(request)
@@ -167,15 +153,16 @@ def search_host(request):
     host_write_into_db(res, bk_biz_id)
 
     # 处理无效的参数
-    params = pop_useless_params(params)
+    params = CommonUtil.pop_useless_params(params)
 
     result = []
     host_info_list = HostInfo.objects.filter(**params)
 
-    # 查询性能数据
+    # 查询最新性能数据
     for host_info in host_info_list:
         host_info_dict = model_to_dict(host_info)
-        host_performance = HostPerformance.objects.filter(bk_host_innerip=host_info_dict['bk_host_innerip']).order_by(
+        host_performance = HostPerformance.objects.filter(bk_host_innerip=host_info_dict['bk_host_innerip'],
+                                                          is_delete=False).order_by(
             'check_time').last()
         if host_performance:
             host_info_dict.update(model_to_dict(host_performance, fields=['bk_host_innerip', 'mem', 'disk', 'cpu']))
@@ -213,6 +200,10 @@ def host_write_into_db(result, bk_biz_id):
 
 
 def display_performance(request):
+    """
+    用于展示性能图表
+    """
+
     def generate_data(pfm_list):
         xAxis = []
         series = []
@@ -241,11 +232,11 @@ def display_performance(request):
         })
         return {
             "xAxis": xAxis,
-            "series": series
+            "series": series,
+            "title": pfm_list[0].bk_host_innerip.bk_host_innerip if pfm_list else u'无数据'
         }
 
-    params = pop_useless_params(json.loads(request.body))
-
+    params = CommonUtil.pop_useless_params(json.loads(request.body))
     result = []
     host_pfm_list = HostPerformance.objects.filter(**params)
     if params.get('bk_host_innerip__in', None):
@@ -253,18 +244,55 @@ def display_performance(request):
             single_host_pfm_list = host_pfm_list.filter(bk_host_innerip=ip)
             result.append(generate_data(single_host_pfm_list))
     else:
-        result.append(generate_data(host_pfm_list))
+        host_info_list = HostInfo.objects.filter(is_delete=False)
+        for host_info in host_info_list:
+            result.append(generate_data(host_pfm_list.filter(bk_host_innerip=host_info)))
 
     return render_json({'data': result})
 
 
-def pop_useless_params(params):
-    pop_keys = []
-    for key, value in params.items():
-        if value == '':
-            pop_keys.append(key)
-        if key.endswith('__in'):
-            params[key] = value.split(',')
-    for pop in pop_keys:
-        params.pop(pop)
-    return params
+def switch_performance(request):
+    params = json.loads(request.body)
+    host_info = HostInfo.objects.filter(bk_host_innerip=params['ip'])
+    host_info.update(is_delete=params['is_delete'])
+    HostPerformance.objects.filter(bk_host_innerip=host_info).update(is_delete=params['is_delete'])
+    host_info_dict = CommonUtil.get_newest_pfm(params['ip'])
+    return render_json({'data': host_info_dict})
+
+
+def get_new_pfm(request):
+    ip = request.GET.get('ip')
+    host_info_dict = CommonUtil.get_newest_pfm(ip)
+    return render_json({'data': host_info_dict})
+
+
+class CommonUtil(object):
+    @classmethod
+    def get_newest_pfm(self, ip):
+        host_info = HostInfo.objects.get(bk_host_innerip=ip)
+        host_info_dict = model_to_dict(host_info)
+        host_performance = HostPerformance.objects.filter(bk_host_innerip=host_info_dict['bk_host_innerip'],
+                                                          is_delete=False).order_by(
+            'check_time').last()
+        if host_performance:
+            host_info_dict.update(model_to_dict(host_performance, fields=['bk_host_innerip', 'mem', 'disk', 'cpu']))
+        else:
+            host_info_dict.update({
+                'mem': '--',
+                'disk': '--',
+                'cpu': '--'
+            })
+        return host_info_dict
+
+    @classmethod
+    def pop_useless_params(self, params):
+        # 请求参数处理
+        pop_keys = []
+        for key, value in params.items():
+            if value == '':
+                pop_keys.append(key)
+            if key.endswith('__in'):
+                params[key] = str(value).split(',')
+        for pop in pop_keys:
+            params.pop(pop)
+        return params

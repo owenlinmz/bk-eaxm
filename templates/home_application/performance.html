@@ -2,31 +2,31 @@
 
 <%block name="content">
 <div class="performance" id="app">
-    <i-form>
+
+    <i-form class="select">
         <Form-item label="选择业务">
             <i-select v-model="bizModel" style="width:200px">
                 <i-option v-for="item in bk_biz_id" :value="item.bk_biz_id"
                           :key="item.bk_biz_name">{{ item.bk_biz_name }}</i-option>
             </i-select>
+            <i-input v-model="ip_list" placeholder="请输入IP" style="width: 250px"/>
         </Form-item>
-        <i-input v-model="ip_list" placeholder="请输入IP" style="width: 250px"/>
+        <i-button type="primary" @click="display_performance" style="margin-left: 10%">查询性能</i-button>
     </i-form>
-    <div id="performance" style="height:500px;border:1px solid"></div>
+    <div v-for="item in elements" :id="item.element_name" style="height:250px; margin-top: 50px; width: 80%; margin-left: 10%"></div>
 </div>
 </%block>
-
-<script src="https://magicbox.bk.tencent.com/static_api/v3/assets/js/jquery-1.10.2.min.js"></script>
-<script src="https://magicbox.bk.tencent.com/static_api/v3/assets/echarts-2.0/echarts-all.js"></script>
 
 <script>
     Vue.prototype.$http = axios;
     let vm = new Vue({
         el: "#app",
         data: {
-            pfm_data: [],
+            pfm_data_list: [],
             ip_list: '',
             bizModel: '',
-            bk_biz_id: []
+            bk_biz_id: [],
+            elements: []
         },
         methods: {
             get_biz() {
@@ -38,15 +38,19 @@
                     console.log(error)
                 });
             },
-            generate_graph() {
-                let myChart = echarts.init(document.getElementById('performance'));
-                this.pfm_data = this.pfm_data[0];
+            generate_graph(element_name, pfm_data) {
+                let myChart = echarts.init(document.getElementById(element_name));
                 let legendData = [];
                 // 曲线名,mem,cpu,disk
-                for (let i = 0; i < this.pfm_data.series.length; i++) {
-                    legendData.push(this.pfm_data.series[i].name)
+                for (let i = 0; i < pfm_data.series.length; i++) {
+                    legendData.push(pfm_data.series[i].name)
                 }
                 myChart.setOption({
+                    title: {
+                        show: true,
+                        text: pfm_data.title,
+                        x: 'center'
+                    },
                     tooltip: {
                         trigger: 'axis'
                     },
@@ -54,22 +58,11 @@
                         y: 'bottom',
                         data: legendData
                     },
-                    toolbox: {
-                        show: true,
-                        feature: {
-                            mark: {show: true},
-                            dataView: {show: true, readOnly: false},
-                            magicType: {show: true, type: ['bar', 'line']},
-                            restore: {show: true},
-                            saveAsImage: {show: true}
-                        }
-                    },
                     calculable: true,
                     xAxis: [
                         {
                             type: 'category',
-                            // x坐标
-                            data: this.pfm_data.xAxis
+                            data: pfm_data.xAxis
                         }
                     ],
                     yAxis: [
@@ -78,18 +71,24 @@
                             splitArea: {show: true}
                         }
                     ],
-                    series: this.pfm_data.series
+                    series: pfm_data.series
                 });
             },
             display_performance() {
                 let url = site_url + 'display_performance/';
                 let params = {
                     bk_host_innerip__in: this.ip_list,
-                    bk_biz_id: this.bizModel
+                    bk_host_innerip__bk_biz_id__in: this.bizModel
                 };
                 this.$http.post(url, params).then(response => {
-                    this.pfm_data = response.data.data;
-                    this.generate_graph()
+                    this.pfm_data_list = response.data.data;
+                    this.elements = [];
+                    for (let i = 0; i < this.pfm_data_list.length; i++) {
+                        this.elements.push({element_name: 'pfm' + i});
+                        window.setTimeout(() => {
+                            this.generate_graph('pfm' + i, this.pfm_data_list[i])
+                        }, 500);
+                    }
                 }).catch(error => {
                         console.log(error)
                     }
@@ -98,7 +97,19 @@
         },
         mounted() {
             this.get_biz();
-            this.display_performance()
+        },
+        watch: {
+            bizModel() {
+                this.display_performance();
+            }
         }
     })
 </script>
+
+<style>
+    .select {
+        margin-left: 30%;
+        margin-top: 20px;
+    }
+
+</style>

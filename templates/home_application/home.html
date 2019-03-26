@@ -23,12 +23,12 @@
         </i-form>
     </div>
     <div class="host_list">
-        <Card style="width:1035px">
+        <Card style="width:1500px">
             <p slot="title">
                 <Icon type="ios-film-outline"></Icon>
                 主机列表
             </p>
-            <i-table height="300" width="1000" :columns="columns" :data="hosts"></i-table>
+            <i-table stripe height="300" width="1300" :columns="columns" :data="hosts"></i-table>
         </Card>
     </div>
 </div>
@@ -71,6 +71,41 @@
                 {
                     title: 'cpu使用率',
                     key: 'cpu'
+                },
+                {
+                    title: '操作',
+                    key: 'action',
+                    width: 300,
+                    align: 'center',
+                    render: (h, params) => {
+                        return h('div', [
+                            h('Button', {
+                                props: {
+                                    type: 'primary',
+                                    size: 'small'
+                                },
+                                style: {
+                                    marginRight: '10px'
+                                },
+                                on: {
+                                    click: () => {
+                                        vm.update_pfm(params.row)
+                                    }
+                                }
+                            }, '更新数据'),
+                            h('Button', {
+                                props: {
+                                    type: 'warning',
+                                    size: 'small'
+                                },
+                                on: {
+                                    click: () => {
+                                        vm.switch_pfm(params.row)
+                                    }
+                                }
+                            }, '启用/停用监控')
+                        ]);
+                    }
                 }
             ],
             hosts: [],
@@ -137,10 +172,13 @@
                 let url = site_url + 'get_performance/';
                 let ip_list = [];
                 for (let i = 0; i < this.hosts.length; i++) {
-                    ip_list.push({
-                        ip: this.hosts[i].bk_host_innerip,
-                        bk_cloud_id: this.hosts[i].bk_cloud_id
-                    })
+                    // 去掉停止监控的主机
+                    if (this.hosts[i].is_delete === false) {
+                        ip_list.push({
+                            ip: this.hosts[i].bk_host_innerip,
+                            bk_cloud_id: this.hosts[i].bk_cloud_id
+                        })
+                    }
                 }
                 let params = {
                     bk_biz_id: this.bizModel,
@@ -153,6 +191,23 @@
                         alert("查询失败")
                     }
                 })
+            },
+            update_pfm: function (data) {
+                console.log(data);
+                url = site_url + 'get_new_pfm/?ip=' + data.bk_host_innerip;
+                this.$http.get(url).then(response => {
+                    Vue.set(this.hosts, data._index, response.data.data)
+                });
+            },
+            switch_pfm: function (data) {
+                params = {
+                    is_delete: !data.is_delete,
+                    ip: data.bk_host_innerip
+                };
+                url = site_url + 'switch_performance/';
+                this.$http.post(url, params).then(response => {
+                    Vue.set(this.hosts, data._index, response.data.data)
+                })
             }
         },
         mounted() {
@@ -161,6 +216,7 @@
         watch: {
             bizModel() {
                 this.get_sets();
+                this.search_host();
             }
         }
 
@@ -175,6 +231,5 @@
 
     .host_list {
         margin-top: 50px;
-        margin-left: 15%;
     }
 </style>
