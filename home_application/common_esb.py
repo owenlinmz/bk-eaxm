@@ -3,6 +3,8 @@ import json
 
 import requests
 
+from common.log import logger
+
 
 def search_business(client, username):
     """
@@ -139,6 +141,7 @@ def fast_execute_script(client, username, data, script_content):
         "account": "root",
     }
     res = client.job.fast_execute_script(params)
+    logger.error(u'result内容为:' + res)
     if res['result']:
         return {'data': res['data']}
     return {'data': {}}
