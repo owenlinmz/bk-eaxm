@@ -129,7 +129,7 @@ def get_performance(request):
         params = {}
         params.update({'bk_biz_id': data['bk_biz_id'], 'job_instance_id': res['data']['job_instance_id']})
         res = get_job_instance_log(client, 'admin', params)
-
+        logger.error(u'日志内容为:' + json.dumps(res))
         # 处理性能数据
         try:
             pfm_data = res['data'][0]['step_results'][0]['ip_logs']
