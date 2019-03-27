@@ -4,6 +4,7 @@ import time
 import base64
 
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from blueking.component.shortcuts import get_client_by_request
 from common.mymako import render_mako_context
@@ -49,12 +50,14 @@ def test(request):
     return render_json({"result": True, "message": "success", "data": request.user.username})
 
 
+@csrf_exempt
 def get_biz(request):
     client = get_client_by_request(request)
     res = search_business(client, 'admin')
     return render_json(res)
 
 
+@csrf_exempt
 def get_set(request):
     bk_biz_id = request.GET.get('bk_biz_id')
     client = get_client_by_request(request)
@@ -62,6 +65,7 @@ def get_set(request):
     return render_json(res)
 
 
+@csrf_exempt
 def execute_job(request):
     data = json.loads(request.body)
     client = get_client_by_request(request)
@@ -85,6 +89,7 @@ def execute_job(request):
     return render_json(res)
 
 
+@csrf_exempt
 def search_job_history_in_db(request):
     bk_biz_id = int(request.GET.get('bk_biz_id'))
     history_set = JobHistory.objects.filter(bk_biz_id=bk_biz_id)
@@ -104,6 +109,7 @@ def search_job_history_in_db(request):
     return JsonResponse({'data': return_list})
 
 
+@csrf_exempt
 def get_performance(request):
     data = json.loads(request.body)
     client = get_client_by_request(request)
@@ -145,6 +151,7 @@ def get_performance(request):
     return render_json({'result': False})
 
 
+@csrf_exempt
 def search_host(request):
     params = json.loads(request.body)
     bk_biz_id = params.get('bk_biz_id')
@@ -191,6 +198,7 @@ def host_write_into_db(result, bk_biz_id):
             HostInfo.objects.create(**params)
 
 
+@csrf_exempt
 def display_performance(request):
     """
     用于展示性能图表
@@ -248,6 +256,7 @@ def display_performance(request):
     return render_json({'data': result})
 
 
+@csrf_exempt
 def switch_performance(request):
     params = json.loads(request.body)
     host_info = HostInfo.objects.filter(bk_host_innerip=params['ip'])
@@ -257,6 +266,7 @@ def switch_performance(request):
     return render_json({'data': host_info_dict})
 
 
+@csrf_exempt
 def get_new_pfm(request):
     ip = request.GET.get('ip')
     host_info_dict = CommonUtil.get_newest_pfm(ip)
