@@ -111,8 +111,10 @@ def search_job_history_in_db(request):
 
 @csrf_exempt
 def get_performance(request):
+    logger.error(u'进入get_performance')
     data = json.loads(request.body)
     client = get_client_by_request(request)
+    logger.error(u'获取client')
     script_content = '''#!/bin/bash
     MEMORY=$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')
     DISK=$(df -h | awk '$NF=="/"{printf "%s", $5}')
@@ -121,7 +123,7 @@ def get_performance(request):
     echo -e "$DATE|$MEMORY|$DISK|$CPU"
     '''
     res = fast_execute_script(client, 'admin', data, base64.b64encode(script_content))
-    logger.error(u'res内容为:' + res)
+    logger.error(u'res内容为:' + json.dumps(res))
     time.sleep(2)
     if res['data']:
         params = {}
