@@ -134,7 +134,7 @@ def get_performance():
             cpu = result[3]
             ip = item['ip']
             host_info = HostInfo.objects.get(bk_host_innerip=ip)
-            HostPerformance.objects.create(
+            host_pfm = HostPerformance.objects.create(
                 bk_host_innerip=host_info,
                 check_time=datetime.datetime.strptime(check_time, "%Y-%m-%d %H:%M:%S"),
                 mem=mem,
@@ -142,4 +142,4 @@ def get_performance():
                 cpu=cpu
             )
             now = datetime.datetime.now()
-            logger.info(u"完成一条性能查询：{}".format(now))
+            logger.info(u"主机{}完成一条性能查询：{}".format(host_pfm.bk_host_innerip, now))
