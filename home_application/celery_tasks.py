@@ -121,25 +121,33 @@ def get_performance():
         params.update({'bk_biz_id': data['bk_biz_id'], 'job_instance_id': res['data']['job_instance_id']})
         res = get_job_instance_log(client, 'admin', params)
 
-        # 处理性能数据
-        try:
-            pfm_data = res['data'][0]['step_results'][0]['ip_logs']
-        except KeyError:
-            pfm_data = []
-        for item in pfm_data:
-            result = item['log_content'].split('|')
-            check_time = result[0]
-            mem = result[1]
-            disk = result[2]
-            cpu = result[3]
-            ip = item['ip']
-            host_info = HostInfo.objects.get(bk_host_innerip=ip)
-            host_pfm = HostPerformance.objects.create(
-                bk_host_innerip=host_info,
-                check_time=datetime.datetime.strptime(check_time, "%Y-%m-%d %H:%M:%S"),
-                mem=mem,
-                disk=disk,
-                cpu=cpu
-            )
+        for i in range(5):
+            if res['data'][0]['status'] != 3:
+                time.sleep(2)
+                res = get_job_instance_log(client, 'admin', params)
+            else:
+                break
+
+        if res['data'][0]['status'] == 3:
+            # 处理性能数据
+            try:
+                pfm_data = res['data'][0]['step_results'][0]['ip_logs']
+            except KeyError:
+                pfm_data = []
+            for item in pfm_data:
+                result = item['log_content'].split('|')
+                check_time = result[0]
+                mem = result[1]
+                disk = result[2]
+                cpu = result[3]
+                ip = item['ip']
+                host_info = HostInfo.objects.get(bk_host_innerip=ip)
+                host_pfm = HostPerformance.objects.create(
+                    bk_host_innerip=host_info,
+                    check_time=datetime.datetime.strptime(check_time, "%Y-%m-%d %H:%M:%S"),
+                    mem=mem,
+                    disk=disk,
+                    cpu=cpu
+                )
             now = datetime.datetime.now()
             logger.info(u"主机{}完成一条性能查询：{}".format(host_pfm.bk_host_innerip, now))

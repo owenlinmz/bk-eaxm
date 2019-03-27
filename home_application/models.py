@@ -30,8 +30,8 @@ class HostInfo(models.Model):
     bk_inst_name = models.CharField(u'云区域名称', max_length=30)
     bk_biz_id = models.IntegerField(u'业务ID')
     bk_cloud_id = models.IntegerField(u'云区域ID')
-    bk_set_id = models.CharField(u'所属集群', max_length=100)
-    bk_module_id = models.CharField(u'所属模块', max_length=100)
+    bk_set_id = models.CharField(u'所属集群', max_length=1000)
+    bk_module_id = models.CharField(u'所属模块', max_length=1000)
     is_delete = models.BooleanField(u'是否删除', default=False)
 
 

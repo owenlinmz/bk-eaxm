@@ -111,10 +111,8 @@ def search_job_history_in_db(request):
 
 @csrf_exempt
 def get_performance(request):
-    logger.error(u'进入get_performance')
     data = json.loads(request.body)
     client = get_client_by_request(request)
-    logger.error(u'获取client')
     script_content = '''#!/bin/bash
     MEMORY=$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')
     DISK=$(df -h | awk '$NF=="/"{printf "%s", $5}')
@@ -123,34 +121,42 @@ def get_performance(request):
     echo -e "$DATE|$MEMORY|$DISK|$CPU"
     '''
     res = fast_execute_script(client, 'admin', data, base64.b64encode(script_content))
-    logger.error(u'res内容为:' + json.dumps(res))
-    time.sleep(2)
+
+    time.sleep(5)
     if res['data']:
         params = {}
         params.update({'bk_biz_id': data['bk_biz_id'], 'job_instance_id': res['data']['job_instance_id']})
         res = get_job_instance_log(client, 'admin', params)
-        logger.error(u'日志内容为:' + json.dumps(res))
-        # 处理性能数据
-        try:
-            pfm_data = res['data'][0]['step_results'][0]['ip_logs']
-        except KeyError:
-            pfm_data = []
-        for item in pfm_data:
-            result = item['log_content'].split('|')
-            check_time = result[0]
-            mem = result[1]
-            disk = result[2]
-            cpu = result[3]
-            ip = item['ip']
-            host_info = HostInfo.objects.get(bk_host_innerip=ip)
-            HostPerformance.objects.create(
-                bk_host_innerip=host_info,
-                check_time=datetime.datetime.strptime(check_time, "%Y-%m-%d %H:%M:%S"),
-                mem=mem,
-                disk=disk,
-                cpu=cpu
-            )
-        return render_json({'result': True})
+
+        for i in range(3):
+            if res['data'][0]['status'] != 3:
+                time.sleep(2)
+                res = get_job_instance_log(client, 'admin', params)
+            else:
+                break
+
+        if res['data'][0]['status'] == 3:
+            # 处理性能数据
+            try:
+                pfm_data = res['data'][0]['step_results'][0]['ip_logs']
+            except KeyError:
+                pfm_data = []
+            for item in pfm_data:
+                result = item['log_content'].split('|')
+                check_time = result[0]
+                mem = result[1]
+                disk = result[2]
+                cpu = result[3]
+                ip = item['ip']
+                host_info = HostInfo.objects.get(bk_host_innerip=ip)
+                HostPerformance.objects.create(
+                    bk_host_innerip=host_info,
+                    check_time=datetime.datetime.strptime(check_time, "%Y-%m-%d %H:%M:%S"),
+                    mem=mem,
+                    disk=disk,
+                    cpu=cpu
+                )
+            return render_json({'result': True})
     return render_json({'result': False})
 
 
@@ -209,6 +215,8 @@ def display_performance(request):
 
     # 处理单个主机的性能数据
     def generate_data(pfm_list):
+        if not pfm_list:
+            return None
         xAxis = []
         series = []
         mem = []
@@ -255,7 +263,9 @@ def display_performance(request):
     else:
         host_info_list = HostInfo.objects.filter(is_delete=False, bk_os_name__contains='linux')
         for host_info in host_info_list:
-            result.append(generate_data(host_pfm_list.filter(bk_host_innerip=host_info)))
+            single_res = generate_data(host_pfm_list.filter(bk_host_innerip=host_info))
+            if single_res:
+                result.append(single_res)
     return render_json({'data': result})
 
 
