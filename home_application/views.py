@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from blueking.component.shortcuts import get_client_by_request
 from common.mymako import render_mako_context
 from common.mymako import render_json
+from common.log import logger
 from home_application.celery_tasks import get_job_instance_status
 from models import JobHistory, HostPerformance
 from common_esb import *
@@ -38,7 +39,6 @@ def contactus(request):
 
 
 def history(request):
-    get_job_instance_status()
     return render_mako_context(request, '/home_application/history.html')
 
 
@@ -121,6 +121,7 @@ def get_performance(request):
     echo -e "$DATE|$MEMORY|$DISK|$CPU"
     '''
     res = fast_execute_script(client, 'admin', data, base64.b64encode(script_content))
+    logger.error(u'res内容为:' + res)
     time.sleep(2)
     if res['data']:
         params = {}
