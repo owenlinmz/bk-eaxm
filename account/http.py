@@ -29,13 +29,13 @@ def _http_request(method, url, headers=None, data=None):
         if method == "GET":
             resp = requests.get(url=url, headers=headers, params=data, verify=False)
         elif method == "HEAD":
-            resp = requests.head(url=url, headers=headers)
+            resp = requests.head(url=url, headers=headers, verify=False)
         elif method == "POST":
-            resp = requests.post(url=url, headers=headers, json=data)
+            resp = requests.post(url=url, headers=headers, json=data, verify=False)
         elif method == "DELETE":
-            resp = requests.delete(url=url, headers=headers, json=data)
+            resp = requests.delete(url=url, headers=headers, json=data, verify=False)
         elif method == "PUT":
-            resp = requests.put(url=url, headers=headers, json=data)
+            resp = requests.put(url=url, headers=headers, json=data, verify=False)
         else:
             return False, None
     except requests.exceptions.RequestException:

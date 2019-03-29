@@ -6,7 +6,7 @@ import base64
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from blueking.component.shortcuts import get_client_by_request
+from blueking.component.shortcuts import get_client_by_request, get_client_by_user
 from common.mymako import render_mako_context
 from common.mymako import render_json
 from common.log import logger
@@ -53,7 +53,7 @@ def test(request):
 @csrf_exempt
 def get_biz(request):
     client = get_client_by_request(request)
-    res = search_business(client, 'admin')
+    res = search_business(client, request.user.username)
     return render_json(res)
 
 
@@ -61,7 +61,7 @@ def get_biz(request):
 def get_set(request):
     bk_biz_id = request.GET.get('bk_biz_id')
     client = get_client_by_request(request)
-    res = search_set(client, 'admin', bk_biz_id)
+    res = search_set(client, request.user.username, bk_biz_id)
     return render_json(res)
 
 
@@ -69,7 +69,7 @@ def get_set(request):
 def execute_job(request):
     data = json.loads(request.body)
     client = get_client_by_request(request)
-    res = execute_job_esb(client, 'admin', data)
+    res = execute_job_esb(client, request.user.username, data)
     ip_array = []
     if res['data']:
         for ip in data['ip_list']:
@@ -77,7 +77,7 @@ def execute_job(request):
         create_data = {
             'bk_biz_id': data['bk_biz_id'],
             'bk_biz_name': res['data']['job_instance_name'],
-            'user_name': 'admin',
+            'user_name': request.user.username,
             'ip': ','.join(ip_array),
             'job_id': 1,
             'job_instance_id': res['data']['job_instance_id'],
@@ -120,18 +120,18 @@ def get_performance(request):
     DATE=$(date "+%Y-%m-%d %H:%M:%S")
     echo -e "$DATE|$MEMORY|$DISK|$CPU"
     '''
-    res = fast_execute_script(client, 'admin', data, base64.b64encode(script_content))
+    res = fast_execute_script(client, request.user.username, data, base64.b64encode(script_content))
 
     time.sleep(5)
     if res['data']:
         params = {}
         params.update({'bk_biz_id': data['bk_biz_id'], 'job_instance_id': res['data']['job_instance_id']})
-        res = get_job_instance_log(client, 'admin', params)
+        res = get_job_instance_log(client, request.user.username, params)
 
         for i in range(3):
             if res['data'][0]['status'] != 3:
                 time.sleep(2)
-                res = get_job_instance_log(client, 'admin', params)
+                res = get_job_instance_log(client, request.user.username, params)
             else:
                 break
 
@@ -165,7 +165,7 @@ def search_host(request):
     params = json.loads(request.body)
     bk_biz_id = params.get('bk_biz_id')
     client = get_client_by_request(request)
-    res = get_host_by_biz_and_set(client, 'admin', bk_biz_id)
+    res = get_host_by_biz_and_set(client, request.user.username, bk_biz_id)
     host_write_into_db(res, bk_biz_id)
 
     # 处理无效的参数
